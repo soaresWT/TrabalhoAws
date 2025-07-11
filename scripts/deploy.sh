@@ -7,6 +7,7 @@ echo "🚀 Iniciando deploy da aplicação Correio Romântico..."
 APP_DIR="/var/www/correio-romantico"
 BACKEND_DIR="$APP_DIR/backend"
 FRONTEND_DIR="$APP_DIR/frontend"
+SOURCE_DIR="/home/ubuntu"
 
 # Parar serviços se estiverem rodando
 sudo systemctl stop correio-romantico || true
@@ -19,8 +20,24 @@ sudo mkdir -p $FRONTEND_DIR
 
 # Copiar arquivos da aplicação
 echo "📁 Copiando arquivos..."
-sudo cp -r /home/ubuntu/trabalhoAws/backend/* $BACKEND_DIR/
-sudo cp -r /home/ubuntu/trabalhoAws/frontend/* $FRONTEND_DIR/
+
+# Verificar se os diretórios de origem existem
+if [ ! -d "$SOURCE_DIR/backend" ]; then
+    echo "❌ Diretório $SOURCE_DIR/backend não encontrado!"
+    echo "Verificando estrutura de diretórios..."
+    ls -la $SOURCE_DIR/
+    exit 1
+fi
+
+if [ ! -d "$SOURCE_DIR/frontend" ]; then
+    echo "❌ Diretório $SOURCE_DIR/frontend não encontrado!"
+    echo "Verificando estrutura de diretórios..."
+    ls -la $SOURCE_DIR/
+    exit 1
+fi
+
+sudo cp -r $SOURCE_DIR/backend/* $BACKEND_DIR/
+sudo cp -r $SOURCE_DIR/frontend/* $FRONTEND_DIR/
 
 # Definir permissões
 sudo chown -R ubuntu:ubuntu $APP_DIR
@@ -44,7 +61,6 @@ source venv/bin/activate
 
 # Garantir permissões corretas do ambiente virtual
 sudo chown -R ubuntu:ubuntu venv
-chmod +x venv/bin/*
 
 # Instalar dependências Python
 echo "📦 Instalando dependências Python..."
