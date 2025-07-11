@@ -1,5 +1,8 @@
 # Configuração de Secrets do GitHub
 
+🚨 **PROBLEMA COM "Permission denied (publickey)"?**
+👉 Veja o arquivo `TROUBLESHOOTING_SSH.md` para solução completa!
+
 Para que o CI/CD funcione corretamente, você precisa configurar os seguintes secrets no seu repositório GitHub:
 
 ## Como configurar secrets no GitHub:
