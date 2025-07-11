@@ -69,17 +69,31 @@ pip install --upgrade pip
 # Verificar se requirements.txt existe
 if [ ! -f "requirements.txt" ]; then
     echo "❌ Arquivo requirements.txt não encontrado!"
+    ls -la $BACKEND_DIR/
     exit 1
 fi
 
-pip install -r requirements.txt
+echo "📋 Conteúdo do requirements.txt:"
+cat requirements.txt
+
+echo "📦 Instalando cada dependência..."
+pip install -r requirements.txt --no-cache-dir
 
 # Verificar se a instalação foi bem-sucedida
 if [ $? -eq 0 ]; then
     echo "✅ Dependências instaladas com sucesso!"
+    echo "📋 Pacotes instalados:"
+    pip list | grep -E "Flask|gunicorn|python-dotenv|SQLAlchemy"
 else
     echo "❌ Erro ao instalar dependências!"
-    exit 1
+    echo "Tentando instalação individual das dependências críticas..."
+    pip install Flask Flask-CORS Flask-SQLAlchemy python-dotenv gunicorn requests
+    if [ $? -eq 0 ]; then
+        echo "✅ Dependências críticas instaladas com sucesso!"
+    else
+        echo "❌ Falha crítica na instalação de dependências!"
+        exit 1
+    fi
 fi
 
 # Configurar variáveis de ambiente
