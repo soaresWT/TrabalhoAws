@@ -26,6 +26,11 @@ sudo cp -r /home/ubuntu/trabalhoAws/frontend/* $FRONTEND_DIR/
 sudo chown -R ubuntu:ubuntu $APP_DIR
 chmod +x $BACKEND_DIR/app.py
 
+# Garantir que o diretório do banco SQLite tenha permissões corretas
+sudo mkdir -p $BACKEND_DIR/instance
+sudo chown -R ubuntu:ubuntu $BACKEND_DIR/instance
+chmod 755 $BACKEND_DIR/instance
+
 # Criar ambiente virtual Python
 echo "🐍 Configurando ambiente Python..."
 cd $BACKEND_DIR
@@ -39,20 +44,20 @@ pip install -r requirements.txt
 # Configurar variáveis de ambiente
 echo "⚙️ Configurando variáveis de ambiente..."
 sudo tee $BACKEND_DIR/.env > /dev/null <<EOF
-DATABASE_URL=postgresql://postgres:postgres@localhost/correio_romantico
+DATABASE_URL=sqlite:////var/www/correio-romantico/backend/correio_romantico.db
 FLASK_ENV=production
 FLASK_APP=app.py
 AWS_REGION=us-east-1
 EOF
 
-# Configurar PostgreSQL
-echo "🗄️ Configurando banco de dados..."
-sudo -u postgres psql -c "CREATE DATABASE correio_romantico;" || true
-sudo -u postgres psql -c "CREATE USER appuser WITH PASSWORD 'strongpassword123';" || true
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE correio_romantico TO appuser;" || true
+# Configurar PostgreSQL (comentado para usar SQLite)
+# echo "🗄️ Configurando banco de dados..."
+# sudo -u postgres psql -c "CREATE DATABASE correio_romantico;" || true
+# sudo -u postgres psql -c "CREATE USER appuser WITH PASSWORD 'strongpassword123';" || true
+# sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE correio_romantico TO appuser;" || true
 
-# Atualizar URL do banco no .env
-sudo sed -i 's/DATABASE_URL=.*/DATABASE_URL=postgresql:\/\/appuser:strongpassword123@localhost\/correio_romantico/' $BACKEND_DIR/.env
+# Atualizar URL do banco no .env (usando SQLite)
+# sudo sed -i 's/DATABASE_URL=.*/DATABASE_URL=postgresql:\/\/appuser:strongpassword123@localhost\/correio_romantico/' $BACKEND_DIR/.env
 
 # Criar arquivo de serviço systemd
 echo "🔧 Configurando serviço systemd..."
@@ -134,10 +139,13 @@ sudo systemctl status nginx --no-pager
 # Verificar se a aplicação está respondendo
 echo "🏥 Testando aplicação..."
 sleep 5
-if curl -f http://localhost:5000/api/health; then
+if curl -f http://localhost/api/health; then
     echo "✅ Aplicação está funcionando!"
 else
     echo "❌ Problema na aplicação"
+    echo "Testando diretamente na porta 5000..."
+    curl -f http://localhost:5000/api/health || true
+    echo "Logs da aplicação:"
     sudo journalctl -u correio-romantico --no-pager -n 20
 fi
 
