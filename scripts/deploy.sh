@@ -34,12 +34,37 @@ chmod 755 $BACKEND_DIR/instance
 # Criar ambiente virtual Python
 echo "🐍 Configurando ambiente Python..."
 cd $BACKEND_DIR
+
+# Remover ambiente virtual antigo se existir
+rm -rf venv
+
+# Criar novo ambiente virtual como usuário ubuntu
 python3 -m venv venv
 source venv/bin/activate
 
+# Garantir permissões corretas do ambiente virtual
+sudo chown -R ubuntu:ubuntu venv
+chmod +x venv/bin/*
+
 # Instalar dependências Python
+echo "📦 Instalando dependências Python..."
 pip install --upgrade pip
+
+# Verificar se requirements.txt existe
+if [ ! -f "requirements.txt" ]; then
+    echo "❌ Arquivo requirements.txt não encontrado!"
+    exit 1
+fi
+
 pip install -r requirements.txt
+
+# Verificar se a instalação foi bem-sucedida
+if [ $? -eq 0 ]; then
+    echo "✅ Dependências instaladas com sucesso!"
+else
+    echo "❌ Erro ao instalar dependências!"
+    exit 1
+fi
 
 # Configurar variáveis de ambiente
 echo "⚙️ Configurando variáveis de ambiente..."
@@ -70,9 +95,13 @@ After=network.target
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=$BACKEND_DIR
-Environment=PATH=$BACKEND_DIR/venv/bin
-ExecStart=$BACKEND_DIR/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
+Environment=PATH=$BACKEND_DIR/venv/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=$BACKEND_DIR/.env
+ExecStart=$BACKEND_DIR/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 --timeout 120 --access-logfile - --error-logfile - app:app
 Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -117,6 +146,9 @@ sudo nginx -t
 echo "🗄️ Inicializando banco de dados..."
 cd $BACKEND_DIR
 source venv/bin/activate
+
+# Verificar se consegue importar a aplicação
+echo "🔍 Testando importação da aplicação..."
 python3 -c "
 from app import app, db
 with app.app_context():
@@ -124,10 +156,29 @@ with app.app_context():
     print('Banco de dados inicializado com sucesso!')
 "
 
+# Verificar se o gunicorn funciona
+echo "🔍 Testando gunicorn..."
+which gunicorn
+gunicorn --version
+
 # Recarregar systemd e iniciar serviços
 sudo systemctl daemon-reload
 sudo systemctl enable correio-romantico
+
+echo "🔍 Iniciando serviço..."
 sudo systemctl start correio-romantico
+
+# Aguardar um pouco para o serviço iniciar
+sleep 3
+
+# Verificar se iniciou corretamente
+if sudo systemctl is-active --quiet correio-romantico; then
+    echo "✅ Serviço correio-romantico iniciado com sucesso"
+else
+    echo "❌ Falha ao iniciar o serviço correio-romantico"
+    echo "Logs do serviço:"
+    sudo journalctl -u correio-romantico --no-pager -n 10
+fi
 sudo systemctl enable nginx
 sudo systemctl start nginx
 
