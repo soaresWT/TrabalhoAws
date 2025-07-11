@@ -1,0 +1,14 @@
+correio_romantico.db
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+.DS_Store
+*.log
+node_modules/
+dist/
+.coverage
+htmlcov/
+.pytest_cache/
+.vscode/
+.idea/
