@@ -41,9 +41,11 @@ class Carta(db.Model):
             'lida': self.lida
         }
 
-# Criar tabelas
-with app.app_context():
-    db.create_all()
+# Função para inicializar o banco de dados
+def init_db():
+    with app.app_context():
+        db.create_all()
+        print('Banco de dados inicializado com sucesso!')
 
 # Rotas da API
 @app.route('/')

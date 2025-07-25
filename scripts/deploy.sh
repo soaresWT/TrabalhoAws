@@ -110,11 +110,18 @@ echo "🗄️ Configurando banco de dados PostgreSQL..."
 sudo systemctl start postgresql
 sudo systemctl enable postgresql
 
-# Criar banco de dados e usuário
+# Criar banco de dados e usuário com permissões corretas
 sudo -u postgres psql -c "CREATE DATABASE correio_romantico;" || true
 sudo -u postgres psql -c "CREATE USER correio_user WITH PASSWORD 'senha_segura_123';" || true
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE correio_romantico TO correio_user;" || true
 sudo -u postgres psql -c "ALTER USER correio_user CREATEDB;" || true
+
+# Conectar ao banco e dar permissões no schema public
+sudo -u postgres psql -d correio_romantico -c "GRANT ALL ON SCHEMA public TO correio_user;" || true
+sudo -u postgres psql -d correio_romantico -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO correio_user;" || true
+sudo -u postgres psql -d correio_romantico -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO correio_user;" || true
+sudo -u postgres psql -d correio_romantico -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO correio_user;" || true
+sudo -u postgres psql -d correio_romantico -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO correio_user;" || true
 
 # Criar arquivo de serviço systemd
 echo "🔧 Configurando serviço systemd..."
@@ -182,10 +189,8 @@ source venv/bin/activate
 # Verificar se consegue importar a aplicação
 echo "🔍 Testando importação da aplicação..."
 python3 -c "
-from app import app, db
-with app.app_context():
-    db.create_all()
-    print('Banco de dados inicializado com sucesso!')
+from app import app, db, init_db
+init_db()
 "
 
 # Verificar se o gunicorn funciona
