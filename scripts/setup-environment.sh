@@ -10,8 +10,9 @@ sudo apt-get upgrade -y
 # Instalar Python 3 e pip se não estiverem instalados
 sudo apt-get install -y python3 python3-pip python3-venv
 
-# Instalar PostgreSQL
-sudo apt-get install -y postgresql postgresql-contrib
+# Instalar PostgreSQL e dependências de desenvolvimento
+echo "🗄️ Instalando PostgreSQL..."
+sudo apt-get install -y postgresql postgresql-contrib postgresql-server-dev-all libpq-dev
 
 # Instalar Nginx
 sudo apt-get install -y nginx

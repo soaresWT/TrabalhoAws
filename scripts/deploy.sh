@@ -99,20 +99,22 @@ fi
 # Configurar variáveis de ambiente
 echo "⚙️ Configurando variáveis de ambiente..."
 sudo tee $BACKEND_DIR/.env > /dev/null <<EOF
-DATABASE_URL=sqlite:////var/www/correio-romantico/backend/correio_romantico.db
+DATABASE_URL=postgresql://correio_user:senha_segura_123@localhost/correio_romantico
 FLASK_ENV=production
 FLASK_APP=app.py
 AWS_REGION=us-east-1
 EOF
 
-# Configurar PostgreSQL (comentado para usar SQLite)
-# echo "🗄️ Configurando banco de dados..."
-# sudo -u postgres psql -c "CREATE DATABASE correio_romantico;" || true
-# sudo -u postgres psql -c "CREATE USER appuser WITH PASSWORD 'strongpassword123';" || true
-# sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE correio_romantico TO appuser;" || true
+# Configurar PostgreSQL
+echo "🗄️ Configurando banco de dados PostgreSQL..."
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
 
-# Atualizar URL do banco no .env (usando SQLite)
-# sudo sed -i 's/DATABASE_URL=.*/DATABASE_URL=postgresql:\/\/appuser:strongpassword123@localhost\/correio_romantico/' $BACKEND_DIR/.env
+# Criar banco de dados e usuário
+sudo -u postgres psql -c "CREATE DATABASE correio_romantico;" || true
+sudo -u postgres psql -c "CREATE USER correio_user WITH PASSWORD 'senha_segura_123';" || true
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE correio_romantico TO correio_user;" || true
+sudo -u postgres psql -c "ALTER USER correio_user CREATEDB;" || true
 
 # Criar arquivo de serviço systemd
 echo "🔧 Configurando serviço systemd..."
